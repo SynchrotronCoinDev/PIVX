@@ -19,6 +19,63 @@
 
 #include "chainparamsseeds.h"
 
+const uint256 maxUint = uint256(
+        uint256S("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+
+static void MineGenesis(CBlockHeader &genesis, const uint256 &powLimit, bool noProduction) {
+    /*//if (noProduction) genesisBlock.nTime = std::time(0);
+    genesisBlock.nNonce = 0;
+
+    printf("NOTE: Genesis nTime = %u \n", genesisBlock.nTime);
+    printf("WARN: Genesis nNonce (BLANK!) = %u \n", genesisBlock.nNonce);
+
+    uint256 besthash;
+    memset(&besthash, 0xFF, 32);
+    uint256 hashTarget = uint256(powLimit);
+    printf("Target: %s\n", hashTarget.GetHex().c_str());
+    uint256 newhash = uint256(genesisBlock.GetHash());
+    while (newhash > hashTarget) {
+        genesisBlock.nNonce++;
+        if (genesisBlock.nNonce == 0) {
+            printf("NONCE WRAPPED, incrementing time\n");
+            ++genesisBlock.nTime;
+        }
+        // If nothing found after trying for a while, print status
+        if ((genesisBlock.nNonce & 0xffff) == 0)
+            printf("nonce %08X: hash = %s \r",
+                   genesisBlock.nNonce, newhash.ToString().c_str(),
+                   hashTarget.ToString().c_str());
+
+        if (newhash < besthash) {
+            besthash = newhash;
+            printf("New best: %s\n", newhash.GetHex().c_str());
+        }
+        newhash = uint256(genesisBlock.GetHash());
+    }*/
+	printf("MSearching for genesis block...\n");
+      uint256 hashTarget;
+      hashTarget.SetCompact(genesis.nBits);
+      while(uint256(genesis.GetHash()) > uint256(hashTarget))
+      {
+          ++genesis.nNonce;
+          if (genesis.nNonce == 0)
+          {
+              printf("Mainnet NONCE WRAPPED, incrementing time");
+              std::cout << std::string("Mainnet NONCE WRAPPED, incrementing time:\n");
+              ++genesis.nTime;
+          }
+          if (genesis.nNonce % 10000 == 0)
+          {
+              printf("Mainnet: nonce %08u: hash = %s \n", genesis.nNonce, genesis.GetHash().ToString().c_str());
+          }
+      }
+    printf("\nGenesis nTime = %u \n", genesis.nTime);
+    printf("Genesis nNonce = %u \n", genesis.nNonce);
+    printf("Genesis nBits: %08x\n", genesis.nBits);
+    printf("Genesis Hash = %s\n", genesis.GetHash().ToString().c_str());
+    printf("Genesis Hash Merkle Root = %s\n", genesis.hashMerkleRoot.ToString().c_str());
+}
+
 std::string CDNSSeedData::getHost(uint64_t requiredServiceBits) const {
     //use default host for non-filter-capable seeds or if we use the default service bits (NODE_NETWORK)
     if (!supportsServiceBitsFiltering || requiredServiceBits == NODE_NETWORK)
@@ -60,7 +117,7 @@ static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesi
  */
 static CBlock CreateGenesisBlock(uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
 {
-    const char* pszTimestamp = "Cyclotroncoin";
+    const char* pszTimestamp = "Cyclotroncoin the new born of SynchrotronCoin, the best POS Coin of the world";
     const CScript genesisOutputScript = CScript() << ParseHex("04c10e83b2703ccf322f7dbd62dd5855ac7c10bd055814ce121ba32607d573b8810c02c0582aed05b4deb9c4b77b26d92428c61256cd42774babea0a073b2ed0c9") << OP_CHECKSIG;
     return CreateGenesisBlock(pszTimestamp, genesisOutputScript, nTime, nNonce, nBits, nVersion, genesisReward);
 }
@@ -91,7 +148,7 @@ static void convertSeed6(std::vector<CAddress>& vSeedsOut, const SeedSpec6* data
 //   (no blocks before with a timestamp after, none after with
 //    timestamp before)
 // + Contains no strange transactions
-static Checkpoints::MapCheckpoints mapCheckpoints =
+static Checkpoints::MapCheckpoints mapCheckpoints;// =
     //boost::assign::map_list_of
     //(259201, uint256S("1c9121bf9329a6234bfd1ea2d91515f19cd96990725265253f4b164283ade5dd")); //!< First v7 block
 
@@ -103,26 +160,11 @@ static const Checkpoints::CCheckpointData data = {
     2000        // * estimated number of transactions per day after checkpoint*/
 };
 
-static Checkpoints::MapCheckpoints mapCheckpointsTestnet =
-    boost::assign::map_list_of
-    (0, uint256S("0x001"))
-    (1016800, uint256S("6ae7d52092fd918c8ac8d9b1334400387d3057997e6e927a88e57186dc395231"))
-    (1106100, uint256S("c54b3e7e8b710e4075da1806adf2d508ae722627d5bcc43f594cf64d5eef8b30")) //!< zc public spend activation height
-    (1112700, uint256S("2ad8d507dbe3d3841b9f8a29c3878d570228e9361c3e057362d7915777bbc849"))
-    (1347000, uint256S("30c173ffc09a13f288bf6e828216107037ce5b79536b1cebd750a014f4939882")); //!< First v7 block
-static const Checkpoints::CCheckpointData dataTestnet = {
-    &mapCheckpointsTestnet,
-    1575145155,
-    2971390,
-    250};
+static Checkpoints::MapCheckpoints mapCheckpointsTestnet ; //!< First v7 block
+static const Checkpoints::CCheckpointData dataTestnet ={} ;
 
-static Checkpoints::MapCheckpoints mapCheckpointsRegtest =
-    boost::assign::map_list_of(0, uint256S("0x001"));
-static const Checkpoints::CCheckpointData dataRegtest = {
-    &mapCheckpointsRegtest,
-    1454124731,
-    0,
-    100};
+static Checkpoints::MapCheckpoints mapCheckpointsRegtest ;
+static const Checkpoints::CCheckpointData dataRegtest={} ;
 
 class CMainParams : public CChainParams
 {
@@ -132,31 +174,11 @@ public:
         networkID = CBaseChainParams::MAIN;
         strNetworkID = "main";
 
-        genesis = CreateGenesisBlock(1585751631, 0, 0x1e0ffff0, 1, 250 * COIN);
-		if(genesis.GetHash() != uint256("0x"))
-        {
-        uint256 hashTarget;
-        hashTarget.SetCompact(genesis.nBits);
-        while(uint256(genesis.GetHash()) > uint256(hashTarget))
-        {
-            ++genesis.nNonce;
-            if (genesis.nNonce == 0)
-            {
-                ++genesis.nTime;
-            }
-            if (genesis.nNonce % 10000 == 0)
-            {
-               printf("Mainnet: nonce %08u: hash = %s \n", genesis.nNonce, genesis.GetHash().ToString().c_str());
-            }
-        }
-		LogPrintf("!!!!!!!!!!!!GENESIS!!!!!!!!!!!\n");
-		LogPrintf("\nGenesis nTime = %u \n", genesis.nTime);
-		LogPrintf("Genesis nNonce = %u \n", genesis.nNonce);
-		LogPrintf("Genesis Hash = %s\n", UintToArith256(genesis.GetHash()).ToString().c_str());
-		LogPrintf("Genesis Hash Merkle Root = %s\n", genesis.hashMerkleRoot.ToString().c_str());
+        genesis = CreateGenesisBlock(1585751631, 3258635, 0x1e0ffff0, 7, 250 * COIN);
+		//MineGenesis(genesis, consensus.powLimit, true); 
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x"));
-        assert(genesis.hashMerkleRoot == uint256S("0x"));
+        assert(consensus.hashGenesisBlock == uint256S("0x000000fbfcfa1b78f90c51ebe03a55eba36ba045ccff145798c7db63e85ea982"));
+        assert(genesis.hashMerkleRoot == uint256S("0x5dacbc9f3ebf5d3aac6d43f7b1532b170d6394d0b9ca15afff267af65fbbcd72"));
 
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.powLimit   = ~UINT256_ZERO >> 20;   // PIVX starting difficulty is 1 / 2^12
@@ -187,24 +209,24 @@ public:
 
         // height-based activations
         consensus.height_last_PoW = 10;
-        consensus.height_last_ZC_AccumCheckpoint = 1686240;
-        consensus.height_last_ZC_WrappedSerials = 1686229;
-        consensus.height_start_BIP65 = 2;             // Block v5: 82629b7a9978f5c7ea3f70a12db92633a7d2e436711500db28b97efd48b1e527
-        consensus.height_start_InvalidUTXOsCheck = 902850;
-        consensus.height_start_MessSignaturesV2 = 2153200;  // height_start_TimeProtoV2
-        consensus.height_start_StakeModifierNewSelection = 615800;
-        consensus.height_start_StakeModifierV2 = 1967000;   // Block v6: 0ef2556e40f3b9f6e02ce611b832e0bbfe7734a8ea751c7b555310ee49b61456
+        consensus.height_last_ZC_AccumCheckpoint = -1;
+        consensus.height_last_ZC_WrappedSerials = -1;
+        consensus.height_start_BIP65 = -1;             // Block v5: 82629b7a9978f5c7ea3f70a12db92633a7d2e436711500db28b97efd48b1e527
+        consensus.height_start_InvalidUTXOsCheck = -1;
+        consensus.height_start_MessSignaturesV2 = -1;  // height_start_TimeProtoV2
+        consensus.height_start_StakeModifierNewSelection = -1;
+        consensus.height_start_StakeModifierV2 = -1;   // Block v6: 0ef2556e40f3b9f6e02ce611b832e0bbfe7734a8ea751c7b555310ee49b61456
         consensus.height_start_StakeModifierV3 = 999999999;   // Block V8
-        consensus.height_start_TimeProtoV2 = 2153200;       // Block v7: 14e477e597d24549cac5e59d97d32155e6ec2861c1003b42d0566f9bf39b65d5
-        consensus.height_start_ZC = 2;                 // Block v4: 5b2482eca24caf2a46bb22e0545db7b7037282733faa3a42ec20542509999a64
-        consensus.height_start_ZC_InvalidSerials = 891737;
-        consensus.height_start_ZC_PublicSpends = 1880000;
-        consensus.height_start_ZC_SerialRangeCheck = 895400;
-        consensus.height_start_ZC_SerialsV2 = 1153160;
-        consensus.height_ZC_RecalcAccumulators = 908000;
+        consensus.height_start_TimeProtoV2 = -1;       // Block v7: 14e477e597d24549cac5e59d97d32155e6ec2861c1003b42d0566f9bf39b65d5
+        consensus.height_start_ZC = -1;                 // Block v4: 5b2482eca24caf2a46bb22e0545db7b7037282733faa3a42ec20542509999a64
+        consensus.height_start_ZC_InvalidSerials = -1;
+        consensus.height_start_ZC_PublicSpends = -1;
+        consensus.height_start_ZC_SerialRangeCheck = -1;
+        consensus.height_start_ZC_SerialsV2 = -1;
+        consensus.height_ZC_RecalcAccumulators = -1;
 
         // validation by-pass
-        consensus.nPivxBadBlockTime = 1471401614;    // Skip nBit validation of Block 259201 per PR #915
+        consensus.nPivxBadBlockTime = 1771401614;    // Skip nBit validation of Block 259201 per PR #915
         consensus.nPivxBadBlockBits = 0x1c056dac;    // Skip nBit validation of Block 259201 per PR #915
 
         // Zerocoin-related params
@@ -219,7 +241,7 @@ public:
         consensus.ZC_MinMintConfirmations = 20;
         consensus.ZC_MinMintFee = 1 * CENT;
         consensus.ZC_MinStakeDepth = 200;
-        consensus.ZC_TimeStart = 1508214600;        // October 17, 2017 4:30:00 AM
+        consensus.ZC_TimeStart = 1471401614;        // October 17, 2017 4:30:00 AM
         consensus.ZC_WrappedSerialsSupply = 4131563 * COIN;   // zerocoin supply at height_last_ZC_WrappedSerials
 
         /**
@@ -267,10 +289,10 @@ public:
         networkID = CBaseChainParams::TESTNET;
         strNetworkID = "test";
 
-        genesis = CreateGenesisBlock(1454124731, 2402015, 0x1e0ffff0, 1, 250 * COIN);
+        genesis = CreateGenesisBlock(1454124731, 751333, 0x1e0ffff0, 1, 250 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x0000041e482b9b9691d98eefb48473405c0b8ec31b76df3797c74a78680ef818"));
-        assert(genesis.hashMerkleRoot == uint256S("0x1b2ef6e2f28be914103a277377ae7729dcd125dfeb8bf97bd5964ba72b6dc39b"));
+        assert(consensus.hashGenesisBlock == uint256S("0x00000e7e6f32f0ec38ebe50c0ae5efd707b0e4265430d0de394cbc838a256603"));
+        assert(genesis.hashMerkleRoot == uint256S("0x5dacbc9f3ebf5d3aac6d43f7b1532b170d6394d0b9ca15afff267af65fbbcd72"));
 
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.powLimit   = ~UINT256_ZERO >> 20;   // PIVX starting difficulty is 1 / 2^12
@@ -351,9 +373,7 @@ public:
         vFixedSeeds.clear();
         vSeeds.clear();
         // nodes with support for servicebits filtering should be at the top
-        vSeeds.push_back(CDNSSeedData("fuzzbawls.pw", "pivx-testnet.seed.fuzzbawls.pw", true));
-        vSeeds.push_back(CDNSSeedData("fuzzbawls.pw", "pivx-testnet.seed2.fuzzbawls.pw", true));
-        vSeeds.push_back(CDNSSeedData("warrows.dev", "testnet.dnsseed.pivx.warrows.dev"));
+        
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1, 139); // Testnet pivx addresses start with 'x' or 'y'
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1, 19);  // Testnet pivx script addresses start with '8' or '9'
@@ -387,10 +407,11 @@ public:
         networkID = CBaseChainParams::REGTEST;
         strNetworkID = "regtest";
 
-        genesis = CreateGenesisBlock(1454124731, 2402015, 0x1e0ffff0, 1, 250 * COIN);
+        genesis = CreateGenesisBlock(1454124731, 751333, 0x1e0ffff0, 1, 250 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x0000041e482b9b9691d98eefb48473405c0b8ec31b76df3797c74a78680ef818"));
-        assert(genesis.hashMerkleRoot == uint256S("0x1b2ef6e2f28be914103a277377ae7729dcd125dfeb8bf97bd5964ba72b6dc39b"));
+		//MineGenesis(genesis, consensus.powLimit, true);
+        assert(consensus.hashGenesisBlock == uint256S("0x00000e7e6f32f0ec38ebe50c0ae5efd707b0e4265430d0de394cbc838a256603"));
+        assert(genesis.hashMerkleRoot == uint256S("0x5dacbc9f3ebf5d3aac6d43f7b1532b170d6394d0b9ca15afff267af65fbbcd72"));
 
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.powLimit   = ~UINT256_ZERO >> 20;   // PIVX starting difficulty is 1 / 2^12
